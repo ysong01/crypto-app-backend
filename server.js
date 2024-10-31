@@ -8,10 +8,22 @@ const snoowrap = require('snoowrap');
 require('dotenv').config();
 
 const app = express();
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://ysong01.github.io', // Add your frontend domain
+  // Add more domains as needed
+];
 
 app.use(
   cors({
-    origin: 'http://localhost:3000', // Replace with your frontend domain if necessary
+    origin: (origin, callback) => {
+      // Check if the origin is in the allowedOrigins array or if the request has no origin (e.g., for mobile apps or Postman)
+      if (allowedOrigins.includes(origin) || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     optionsSuccessStatus: 200,
   })
 );
