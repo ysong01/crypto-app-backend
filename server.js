@@ -9,7 +9,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: 'https://ysong01.github.io', // Allow your GitHub Pages domain
+    origin: 'http://localhost:3000',  // Allow your GitHub Pages domain
     optionsSuccessStatus: 200, // Some legacy browsers choke on 204
   })
 );
