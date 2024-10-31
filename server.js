@@ -6,7 +6,13 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+
+app.use(
+  cors({
+    origin: 'https://ysong01.github.io', // Allow your GitHub Pages domain
+    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
+  })
+);
 
 const PORT = process.env.PORT || 5000;
 const API_KEY = process.env.BLOCKCHAIR_API_KEY;
@@ -21,6 +27,7 @@ app.get('/api/:crypto', async (req, res) => {
     });
     res.json(response.data.data);
   } catch (error) {
+    console.error('Error fetching data from Blockchair API:', error.message);
     res.status(500).json({ error: 'Failed to fetch data from Blockchair API' });
   }
 });
