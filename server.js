@@ -10,7 +10,8 @@ require('dotenv').config();
 const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://ysong01.github.io', // Add your frontend domain
+  'https://ysong01.github.io',
+  'https://cryptostats.me' // Add your frontend domain
   // Add more domains as needed
 ];
 
