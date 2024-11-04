@@ -120,16 +120,21 @@ app.get('/api/sentiment/:crypto', async (req, res) => {
   }
 });
 
-// Add these new blockchain monitoring endpoints
+// Update the blockchain monitoring endpoints
 app.get('/api/blockchain/stats/:chain', async (req, res) => {
     const { chain } = req.params;
     try {
-        const response = await axios.get(`https://api.blockchair.com/${chain}/stats`, {
+        const response = await axios.get(`https://api.blockchair.com/stats`, {
             params: {
-                key: API_KEY,
-            },
+                key: API_KEY
+            }
         });
-        res.json(response.data);
+        // Extract specific chain data from the response
+        const chainData = response.data.data[chain];
+        if (!chainData) {
+            return res.status(404).json({ error: 'Chain not found' });
+        }
+        res.json({ data: chainData });
     } catch (error) {
         console.error('Error fetching blockchain stats:', error.message);
         res.status(500).json({ error: 'Failed to fetch blockchain stats' });
@@ -139,13 +144,27 @@ app.get('/api/blockchain/stats/:chain', async (req, res) => {
 app.get('/api/blockchain/transactions/:chain', async (req, res) => {
     const { chain } = req.params;
     try {
-        const response = await axios.get(`https://api.blockchair.com/${chain}/mempool/transactions`, {
+        const response = await axios.get(`https://api.blockchair.com/stats`, {
             params: {
-                key: API_KEY,
-                limit: 10
-            },
+                key: API_KEY
+            }
         });
-        res.json(response.data);
+        // Extract transaction data for the specific chain
+        const chainData = response.data.data[chain];
+        if (!chainData) {
+            return res.status(404).json({ error: 'Chain not found' });
+        }
+        
+        // Return relevant transaction data
+        const transactionData = {
+            transactions_24h: chainData.data.transactions_24h,
+            mempool_transactions: chainData.data.mempool_transactions,
+            mempool_size: chainData.data.mempool_size,
+            mempool_tps: chainData.data.mempool_tps,
+            largest_transaction_24h: chainData.data.largest_transaction_24h
+        };
+        
+        res.json({ data: transactionData });
     } catch (error) {
         console.error('Error fetching blockchain transactions:', error.message);
         res.status(500).json({ error: 'Failed to fetch blockchain transactions' });
