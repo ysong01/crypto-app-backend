@@ -15,7 +15,6 @@ const allowedOrigins = [
   'http://localhost:3001',
   'https://ysong01.github.io',
   'https://cryptostats.me',
-  'https://stingray-app-prmsm.ondigitalocean.app'
 ];
 
 // Update CORS configuration
