@@ -11,7 +11,8 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
   'https://ysong01.github.io',
-  'https://cryptostats.me' // Add your frontend domain
+  'https://cryptostats.me',
+  'http://localhost:3001' // Add your frontend domain
   // Add more domains as needed
 ];
 
