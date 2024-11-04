@@ -211,6 +211,42 @@ app.get('/api/blockchain/transactions/:chain', async (req, res) => {
     }
 });
 
+app.get('/api/blockchain/live-transactions/:chain', async (req, res) => {
+    const { chain } = req.params;
+    try {
+        const response = await axios.get(`https://api.blockchair.com/${chain}/mempool/transactions`, {
+            params: {
+                key: API_KEY,
+                limit: 10,
+                s: 'time(desc)'  // Sort by most recent
+            }
+        });
+        
+        if (!response.data || !response.data.data) {
+            return res.status(404).json({ error: 'No transactions available' });
+        }
+
+        // Format and anonymize transaction data
+        const transactions = response.data.data.map(tx => ({
+            hash: tx.hash,
+            time: tx.time,
+            size: tx.size,
+            sender: tx.sender ? `${tx.sender.substring(0, 6)}...${tx.sender.slice(-4)}` : 'Unknown',
+            receiver: tx.recipient ? `${tx.recipient.substring(0, 6)}...${tx.recipient.slice(-4)}` : 'Unknown',
+            value: tx.value,
+            fee: tx.fee
+        }));
+        
+        res.json({ data: transactions });
+    } catch (error) {
+        console.error('Error fetching live transactions:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch live transactions',
+            details: error.message 
+        });
+    }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
