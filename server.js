@@ -124,82 +124,90 @@ app.get('/api/sentiment/:crypto', async (req, res) => {
 app.get('/api/blockchain/stats/:chain', async (req, res) => {
     const { chain } = req.params;
     try {
-        const response = await axios.get(`https://api.blockchair.com/stats`, {
+        // Log the URL and params we're using
+        console.log(`Fetching stats for ${chain}`);
+        
+        const response = await axios.get(`https://api.blockchair.com/${chain}/stats`, {
             params: {
                 key: API_KEY
             }
         });
         
-        // Log the response to see the structure
-        console.log('Blockchair Response:', JSON.stringify(response.data, null, 2));
+        // Log the raw response
+        console.log('Raw Blockchair Response:', JSON.stringify(response.data, null, 2));
         
-        // Extract specific chain data from the response
-        const chainData = response.data.data[chain];
-        if (!chainData) {
-            return res.status(404).json({ error: 'Chain not found' });
+        if (!response.data || !response.data.data) {
+            return res.status(404).json({ error: 'No data available' });
         }
-        
-        // Format the data to match what the frontend expects
+
+        // Format the data
+        const statsData = response.data.data;
         const formattedData = {
-            blocks: chainData.blocks,
-            difficulty: chainData.difficulty,
-            hashrate_24h: chainData.hashrate_24h,
-            mempool_transactions: chainData.mempool_transactions,
-            transactions_24h: chainData.transactions_24h,
-            mempool_size: chainData.mempool_size,
-            mempool_tps: chainData.mempool_tps
+            blocks: statsData.blocks || 0,
+            difficulty: statsData.difficulty || 0,
+            hashrate_24h: statsData.hashrate_24h || 0,
+            mempool_transactions: statsData.mempool_transactions || 0,
+            transactions_24h: statsData.transactions_24h || 0,
+            mempool_size: statsData.mempool_size || 0,
+            mempool_tps: statsData.mempool_tps || 0
         };
         
         res.json({ data: formattedData });
     } catch (error) {
-        console.error('Error fetching blockchain stats:', error.message);
-        res.status(500).json({ error: 'Failed to fetch blockchain stats' });
+        console.error('Error fetching blockchain stats:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch blockchain stats',
+            details: error.message 
+        });
     }
 });
 
 app.get('/api/blockchain/transactions/:chain', async (req, res) => {
     const { chain } = req.params;
     try {
-        const response = await axios.get(`https://api.blockchair.com/stats`, {
+        const response = await axios.get(`https://api.blockchair.com/${chain}/stats`, {
             params: {
                 key: API_KEY
             }
         });
         
-        // Extract transaction data for the specific chain
-        const chainData = response.data.data[chain];
-        if (!chainData) {
-            return res.status(404).json({ error: 'Chain not found' });
+        if (!response.data || !response.data.data) {
+            return res.status(404).json({ error: 'No data available' });
         }
+
+        const statsData = response.data.data;
         
         // Format transaction data
         const transactionData = [
             {
                 type: '24h Transactions',
-                value: chainData.transactions_24h,
-                count: chainData.transactions_24h
+                value: statsData.transactions_24h || 0,
+                count: statsData.transactions_24h || 0
             },
             {
                 type: 'Mempool Transactions',
-                value: chainData.mempool_transactions,
-                count: chainData.mempool_transactions
+                value: statsData.mempool_transactions || 0,
+                count: statsData.mempool_transactions || 0
             },
             {
                 type: 'Mempool Size',
-                value: chainData.mempool_size,
-                count: chainData.mempool_size
+                value: statsData.mempool_size || 0,
+                count: statsData.mempool_size || 0
             },
             {
-                type: 'Transaction Rate',
-                value: chainData.mempool_tps,
-                count: chainData.mempool_tps
+                type: 'Transaction Rate (TPS)',
+                value: statsData.mempool_tps || 0,
+                count: statsData.mempool_tps || 0
             }
         ];
         
         res.json({ data: transactionData });
     } catch (error) {
-        console.error('Error fetching blockchain transactions:', error.message);
-        res.status(500).json({ error: 'Failed to fetch blockchain transactions' });
+        console.error('Error fetching blockchain transactions:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch blockchain transactions',
+            details: error.message 
+        });
     }
 });
 
