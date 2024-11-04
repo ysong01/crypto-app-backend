@@ -129,12 +129,28 @@ app.get('/api/blockchain/stats/:chain', async (req, res) => {
                 key: API_KEY
             }
         });
+        
+        // Log the response to see the structure
+        console.log('Blockchair Response:', JSON.stringify(response.data, null, 2));
+        
         // Extract specific chain data from the response
         const chainData = response.data.data[chain];
         if (!chainData) {
             return res.status(404).json({ error: 'Chain not found' });
         }
-        res.json({ data: chainData });
+        
+        // Format the data to match what the frontend expects
+        const formattedData = {
+            blocks: chainData.blocks,
+            difficulty: chainData.difficulty,
+            hashrate_24h: chainData.hashrate_24h,
+            mempool_transactions: chainData.mempool_transactions,
+            transactions_24h: chainData.transactions_24h,
+            mempool_size: chainData.mempool_size,
+            mempool_tps: chainData.mempool_tps
+        };
+        
+        res.json({ data: formattedData });
     } catch (error) {
         console.error('Error fetching blockchain stats:', error.message);
         res.status(500).json({ error: 'Failed to fetch blockchain stats' });
@@ -149,20 +165,36 @@ app.get('/api/blockchain/transactions/:chain', async (req, res) => {
                 key: API_KEY
             }
         });
+        
         // Extract transaction data for the specific chain
         const chainData = response.data.data[chain];
         if (!chainData) {
             return res.status(404).json({ error: 'Chain not found' });
         }
         
-        // Return relevant transaction data
-        const transactionData = {
-            transactions_24h: chainData.data.transactions_24h,
-            mempool_transactions: chainData.data.mempool_transactions,
-            mempool_size: chainData.data.mempool_size,
-            mempool_tps: chainData.data.mempool_tps,
-            largest_transaction_24h: chainData.data.largest_transaction_24h
-        };
+        // Format transaction data
+        const transactionData = [
+            {
+                type: '24h Transactions',
+                value: chainData.transactions_24h,
+                count: chainData.transactions_24h
+            },
+            {
+                type: 'Mempool Transactions',
+                value: chainData.mempool_transactions,
+                count: chainData.mempool_transactions
+            },
+            {
+                type: 'Mempool Size',
+                value: chainData.mempool_size,
+                count: chainData.mempool_size
+            },
+            {
+                type: 'Transaction Rate',
+                value: chainData.mempool_tps,
+                count: chainData.mempool_tps
+            }
+        ];
         
         res.json({ data: transactionData });
     } catch (error) {
