@@ -120,6 +120,38 @@ app.get('/api/sentiment/:crypto', async (req, res) => {
   }
 });
 
+// Add these new blockchain monitoring endpoints
+app.get('/api/blockchain/stats/:chain', async (req, res) => {
+    const { chain } = req.params;
+    try {
+        const response = await axios.get(`https://api.blockchair.com/${chain}/stats`, {
+            params: {
+                key: API_KEY,
+            },
+        });
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error fetching blockchain stats:', error.message);
+        res.status(500).json({ error: 'Failed to fetch blockchain stats' });
+    }
+});
+
+app.get('/api/blockchain/transactions/:chain', async (req, res) => {
+    const { chain } = req.params;
+    try {
+        const response = await axios.get(`https://api.blockchair.com/${chain}/mempool/transactions`, {
+            params: {
+                key: API_KEY,
+                limit: 10
+            },
+        });
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error fetching blockchain transactions:', error.message);
+        res.status(500).json({ error: 'Failed to fetch blockchain transactions' });
+    }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
