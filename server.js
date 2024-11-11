@@ -50,18 +50,11 @@ app.use((req, res, next) => {
   next();
 });
 
-const PORT = process.env.PORT || 5000;
-const API_KEY = process.env.BLOCKCHAIR_API_KEY;
-
 // Existing endpoint for cryptocurrency stats
 app.get('/api/:crypto', async (req, res) => {
   const { crypto } = req.params;
   try {
-    const response = await axios.get(`https://api.blockchair.com/${crypto}/stats`, {
-      params: {
-        key: API_KEY,
-      },
-    });
+    const response = await axios.get(`https://api.blockchair.com/${crypto}/stats`);
     res.json(response.data.data);
   } catch (error) {
     console.error('Error fetching data from Blockchair API:', error.message);
@@ -127,11 +120,7 @@ app.get('/api/blockchain/stats/:chain', async (req, res) => {
         // Log the URL and params we're using
         console.log(`Fetching stats for ${chain}`);
         
-        const response = await axios.get(`https://api.blockchair.com/${chain}/stats`, {
-            params: {
-                key: API_KEY
-            }
-        });
+        const response = await axios.get(`https://api.blockchair.com/${chain}/stats`);
         
         // Log the raw response
         console.log('Raw Blockchair Response:', JSON.stringify(response.data, null, 2));
@@ -165,11 +154,7 @@ app.get('/api/blockchain/stats/:chain', async (req, res) => {
 app.get('/api/blockchain/transactions/:chain', async (req, res) => {
     const { chain } = req.params;
     try {
-        const response = await axios.get(`https://api.blockchair.com/${chain}/stats`, {
-            params: {
-                key: API_KEY
-            }
-        });
+        const response = await axios.get(`https://api.blockchair.com/${chain}/stats`);
         
         if (!response.data || !response.data.data) {
             return res.status(404).json({ error: 'No data available' });
@@ -216,7 +201,6 @@ app.get('/api/blockchain/live-transactions/:chain', async (req, res) => {
     try {
         const response = await axios.get(`https://api.blockchair.com/${chain}/mempool/transactions`, {
             params: {
-                key: API_KEY,
                 limit: 10,
                 s: 'time(desc)'  // Sort by most recent
             }
