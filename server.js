@@ -1,11 +1,13 @@
 // backend/server.js
 
+require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const Sentiment = require('sentiment');
 const snoowrap = require('snoowrap');
-require('dotenv').config();
+
+const PORT = process.env.PORT || 3000;
 
 const app = express();
 
