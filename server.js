@@ -69,54 +69,100 @@ app.get('/api/:crypto', async (req, res) => {
   }
 });
 
-// New endpoint for sentiment analysis
+// New endpoint for sentiment analysis with improved error handling
 app.get('/api/sentiment/:crypto', async (req, res) => {
   const { crypto } = req.params;
   const { REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_USERNAME, REDDIT_PASSWORD } = process.env;
 
-  // Initialize Reddit API client
-  const reddit = new snoowrap({
-    userAgent: 'CryptoSentimentAnalyzer/1.0.0',
-    clientId: REDDIT_CLIENT_ID,
-    clientSecret: REDDIT_CLIENT_SECRET,
-    username: REDDIT_USERNAME,
-    password: REDDIT_PASSWORD,
-  });
+  // Check if Reddit credentials are present
+  if (!REDDIT_CLIENT_ID || !REDDIT_CLIENT_SECRET || !REDDIT_USERNAME || !REDDIT_PASSWORD) {
+    console.error('Missing Reddit API credentials');
+    return res.status(500).json({ 
+      error: 'Reddit API configuration missing',
+      details: 'Required environment variables are not set'
+    });
+  }
 
   try {
-    // Fetch recent posts about the cryptocurrency
-    const posts = await reddit.getSubreddit('all').search({
+    // Initialize Reddit API client with error handling
+    const reddit = new snoowrap({
+      userAgent: 'CryptoSentimentAnalyzer/1.0.0',
+      clientId: REDDIT_CLIENT_ID,
+      clientSecret: REDDIT_CLIENT_SECRET,
+      username: REDDIT_USERNAME,
+      password: REDDIT_PASSWORD,
+    });
+
+    // Add timeout and error handling for Reddit API calls
+    const searchPromise = reddit.getSubreddit('all').search({
       query: crypto,
       sort: 'new',
       limit: 50,
       time: 'day',
-    });
+    }).timeout(10000); // 10 second timeout
+
+    const posts = await searchPromise;
+    
+    // Validate posts response
+    if (!Array.isArray(posts) || posts.length === 0) {
+      return res.status(200).json({
+        averageScore: 0,
+        postsAnalyzed: 0,
+        results: [],
+        message: 'No posts found for analysis'
+      });
+    }
 
     const sentiment = new Sentiment();
     const results = [];
 
-    // Analyze sentiment for each post
+    // Analyze sentiment for each post with error handling
     posts.forEach((post) => {
-      const analysis = sentiment.analyze(post.title + ' ' + post.selftext);
-      results.push({
-        title: post.title,
-        score: analysis.score,
-        comparative: analysis.comparative,
-      });
+      try {
+        const text = (post.title || '') + ' ' + (post.selftext || '');
+        const analysis = sentiment.analyze(text);
+        results.push({
+          title: post.title || 'No title',
+          score: analysis.score,
+          comparative: analysis.comparative,
+        });
+      } catch (error) {
+        console.error('Error analyzing post:', error);
+        // Continue with next post
+      }
     });
 
+    // Check if we have any results
+    if (results.length === 0) {
+      return res.status(200).json({
+        averageScore: 0,
+        postsAnalyzed: 0,
+        results: [],
+        message: 'No valid posts for sentiment analysis'
+      });
+    }
+
     // Calculate average sentiment score
-    const averageScore =
-      results.reduce((acc, curr) => acc + curr.score, 0) / results.length;
+    const averageScore = results.reduce((acc, curr) => acc + curr.score, 0) / results.length;
 
     res.json({
       averageScore,
       postsAnalyzed: results.length,
       results,
     });
+
   } catch (error) {
-    console.error('Error fetching data from Reddit API:', error.message);
-    res.status(500).json({ error: 'Failed to fetch data from Reddit API' });
+    console.error('Reddit API Error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
+    res.status(500).json({ 
+      error: 'Failed to fetch data from Reddit API',
+      details: error.message,
+      type: error.name
+    });
   }
 });
 
